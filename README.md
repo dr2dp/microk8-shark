@@ -7,7 +7,7 @@
 - Ubuntu 20.04+ (VM or bare metal)
 - Minimum 4GB RAM, 2 CPU cores
 - MicroK8s installed
-- Docker or Podman
+- Docker installed
 
 ## Tutorial
 ### 1. Clone Repository
@@ -90,17 +90,44 @@ cloud-native/
 │   └── hpa.yaml
 │
 ├── Dockerfile
+├── traffic.sh
 │
 ├── README.md
 ├── REPORT.pdf
 
 ## Testing
-#3. Chaos Test
+# 1. Registry proof
+
+# List images in registry
+curl http://localhost:32000/v2/_catalog
+
+# Show the Dockerfile that builds this image
+cat Dockerfile
+
+# Show the K8s manifest pointing to this local registry
+cat k8s/deployment.yaml | grep "image:"
+
+# 2. Traffic
+chmod +x $traffic.sh
+./traffic.sh
+
+# 3. Chaos Test
 # Delete a pod
-microk8s kubectl delete pod $(microk8s kubectl get pods -l app=flask-app -o jsonpath='{.items[0].metadata.name}')
+microk8s kubectl delete pod $PODNAME
+
+# Verify service still works
+curl http://flask-app.local/
+
+# 4. Scaling Test
+microk8s kubectl get pods
+microk8s kubectl scale deployment flask-app --replicas=5
+microk8s kubectl get pods
+
+NOTE: Containers may self terminate if the hpa was not given enough time to get metrics
+
 
 # Verify it is recreated
-kubectl get pods -l app=flask-app -w
+microk8s kubectl get pods -l app=flask-app -w
 
 # Verify service still works
 curl http://flask-app.local/
