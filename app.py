@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 import socket
 import os
 
@@ -6,6 +6,12 @@ app = Flask(__name__)
 
 @app.route('/')
 def home():
+    hostname = socket.gethostname()
+    pod_ip = os.environ.get('POD_IP', 'unknown')
+    return render_template('index.html', hostname=hostname, pod_ip=pod_ip)
+
+@app.route('/info')
+def info():
     hostname = socket.gethostname()
     pod_ip = os.environ.get('POD_IP', 'unknown')
 
