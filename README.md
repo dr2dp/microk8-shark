@@ -1,138 +1,134 @@
 # MicroK8s Scalable Microservices Project
 
-## Team Members
-- 吳得豐 412855180
+A cloud-native, auto-scaling microservices architecture deployed locally using MicroK8s. This project demonstrates containerized deployment, a local private registry workflow, dynamic Horizontal Pod Autoscaling (HPA), and ingress routing.
 
-## Prerequisites
-- Ubuntu 20.04+ (VM or bare metal)
-- Minimum 4GB RAM, 2 CPU cores
-- MicroK8s installed
-- Docker installed
+---
 
-## Tutorial
+## 👥 Team Members
+* **吳得豐** (412855180)
+* **林大偉** (412855263)
+* **高曼柯** (412855289)
+* **陳明義** (412855339)
+
+---
+
+## 📌 Prerequisites
+
+Ensure your environment meets these hardware and software specifications before starting:
+* **OS:** Ubuntu 20.04+ (Virtual Machine or bare-metal)
+* **Hardware:** Minimum 4GB RAM, 2 CPU cores
+* **Runtimes:** MicroK8s and Docker (Installation steps provided below)
+
+---
+
+## 📂 Architecture & Directory Structure
+
+```text
+cloud-native/
+│
+├── app.py                  # Flask application source code
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Container build instructions
+├── traffic.sh              # Traffic generation script for testing
+│
+├── k8s/                    # Kubernetes Manifests
+│   ├── deployment.yaml     # App deployment configuration
+│   ├── service.yaml        # Internal ClusterIP service
+│   ├── ingress.yaml        # NGINX Ingress routing rules
+│   └── hpa.yaml            # Horizontal Pod Autoscaler configuration
+│
+├── README.md               # Project documentation
+└── REPORT.pdf              # Final project report
+
+```
+
+---
+
+## ⚙️ Resource Optimization per Pod
+​Our deployment manifests are fine-tuned for high density and efficient local resource consumption:
+* **​RAM:** 128Mi request / 256Mi limit
+* **CPU:** 100m request / 200m limit
+
+---
+
+## ​🚀 Tutorial & Deployment Step
+
 ### 1. Clone Repository
-\`\`\`bash
-git clone <repo-url>
+```bash
+git clone https://github.com/dr2dp/microk8s-shark.git
 cd cloud-native
-\`\`\`
+```
+---
 
 ### 2. Setup Environment
-\`\`\`bash
-# Install MicroK8s
+Run these commands to install MicroK8s, configure user permissions, and spin up Docker.
+
+```bash
+# Install MicroK8s via Snap
 sudo snap install microk8s --classic
 
-# Add your user to microk8s group
+# Add your user to the microk8s group and configure local kube directories
 sudo usermod -a -G microk8s $USER
-sudo chown -f -R $USER ~/.kube
+mkdir -p ~/.kube
+sudo chown -R $USER ~/.kube
 newgrp microk8s
 
-# Verify installation
+# Verify MicroK8s installation status
 microk8s status --wait-ready
 
-# Enable required addons
-microk8s enable dns
-microk8s enable registry
-microk8s enable ingress
-microk8s enable metrics-server
+# Enable required MicroK8s core add-ons
+microk8s enable dns registry ingress metrics-server
 
-# Install Docker
-\`\`\`
+# Install and configure the Docker engine
 sudo apt update
 sudo apt install docker.io -y
 sudo usermod -aG docker $USER
 newgrp docker
-\`\`\`
+
+```
+---
 
 ### 3. Build and Push to Local Registry
-\`\`\`bash
-# Build the image
+
+```bash
+# Build the local Docker image
 docker build -t my-flask-app:v1 .
 
-# Tag for local registry
+# Tag the image targeting the built-in MicroK8s registry (port 32000)
 docker tag my-flask-app:v1 localhost:32000/my-flask-app:v1
 
-# Push to MicroK8s registry
+# Push the tagged image into the local registry
 docker push localhost:32000/my-flask-app:v1
 
-# Verify image is in registry
+# Verify the image is successfully hosted in the private catalog
 curl http://localhost:32000/v2/_catalog
-\`\`\`
+
+```
+
+---
+
 
 ### 4. Deploy Everything
-# Apply all manifests
+```bash
+# Apply all core manifests from the directory
 microk8s kubectl apply -f k8s/
 
-# Verify deployment
+# Verify resource deployment status across components
 microk8s kubectl get pods
 microk8s kubectl get svc
 microk8s kubectl get ingress
 microk8s kubectl get hpa
 
-# Add host entry for testing
+# Append a local DNS host entry to match your Ingress rules
 echo "127.0.0.1 flask-app.local" | sudo tee -a /etc/hosts
 
-# Wait for pods to be ready
-kubectl wait --for=condition=ready pod -l app=flask-app --timeout=60s
+# Wait until the target pods pass health checks
+microk8s kubectl wait --for=condition=ready pod -l app=flask-app --timeout=60s
 
-# Test the service
-curl http://flask-app.local/
+# Test cluster ingress responsiveness
+curl [http://flask-app.local/](http://flask-app.local/)
 
-## Architecture
-cloud-native/
-│
-├── app.py
-├── requirements.txt
-│
-├── k8s/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   ├── ingress.yaml
-│   └── hpa.yaml
-│
-├── Dockerfile
-├── traffic.sh
-│
-├── README.md
-├── REPORT.pdf
+```
 
-## Testing
-# 1. Registry proof
+---
 
-# List images in registry
-curl http://localhost:32000/v2/_catalog
-
-# Show the Dockerfile that builds this image
-cat Dockerfile
-
-# Show the K8s manifest pointing to this local registry
-cat k8s/deployment.yaml | grep "image:"
-
-# 2. Traffic
-chmod +x $traffic.sh
-./traffic.sh
-
-# 3. Chaos Test
-# Delete a pod
-microk8s kubectl delete pod $PODNAME
-
-# Verify service still works
-curl http://flask-app.local/
-
-# 4. Scaling Test
-microk8s kubectl get pods
-microk8s kubectl scale deployment flask-app --replicas=5
-microk8s kubectl get pods
-
-NOTE: Containers may self terminate if the hpa was not given enough time to get metrics
-
-
-# Verify it is recreated
-microk8s kubectl get pods -l app=flask-app -w
-
-# Verify service still works
-curl http://flask-app.local/
-
-## Resource Constraints
-Our deployment is optimized for:
-- RAM: 128Mi request, 256Mi limit per pod
-- CPU: 100m request, 200m limit per pod
