@@ -1,6 +1,6 @@
 # MicroK8s Scalable Microservices Project
 
-A cloud-native, auto-scaling microservices architecture deployed locally using MicroK8s. This project demonstrates containerized deployment, a local private registry workflow, dynamic Horizontal Pod Autoscaling (HPA), and ingress routing.
+A cloud-native, auto-scaling microservices architecture deployed locally using MicroK8s. This project demonstrates containerized deployment, a local private registry workflow, dynamic Horizontal Pod Autoscaling (HPA), and ingress routing. This project was created for the course Cloud Computing at Tamkang University (淡江大學).
 
 ---
 
