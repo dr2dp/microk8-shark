@@ -24,7 +24,7 @@ Ensure your environment meets these hardware and software specifications before 
 ## 📂 Architecture & Directory Structure
 
 ```text
-microk8-shark-main/
+microk8s-shark-main/
 │
 ├── app.py                  # Flask application source code
 ├── requirements.txt        # Python dependencies
@@ -62,7 +62,7 @@ microk8-shark-main/
 ### 1. Clone Repository
 ```bash
 git clone https://github.com/dr2dp/microk8s-shark.git
-cd microk8-shark-main
+cd microk8s-shark-main
 ```
 ---
 
